@@ -6,6 +6,7 @@ class UserModel {
   final String displayName;
   final DateTime createdAt;
   final bool notificationsEnabled;
+  final List<String> likedListings;
 
   const UserModel({
     required this.uid,
@@ -13,6 +14,7 @@ class UserModel {
     required this.displayName,
     required this.createdAt,
     this.notificationsEnabled = false,
+    this.likedListings = const [],
   });
 
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
@@ -23,6 +25,7 @@ class UserModel {
       displayName: data['displayName'] ?? '',
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       notificationsEnabled: data['notificationsEnabled'] ?? false,
+      likedListings: List<String>.from(data['likedListings'] ?? []),
     );
   }
 
@@ -32,6 +35,7 @@ class UserModel {
     'displayName': displayName,
     'createdAt': Timestamp.fromDate(createdAt),
     'notificationsEnabled': notificationsEnabled,
+    'likedListings': likedListings,
   };
 
   UserModel copyWith({
@@ -40,6 +44,7 @@ class UserModel {
     String? displayName,
     DateTime? createdAt,
     bool? notificationsEnabled,
+    List<String>? likedListings,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -47,6 +52,7 @@ class UserModel {
       displayName: displayName ?? this.displayName,
       createdAt: createdAt ?? this.createdAt,
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
+      likedListings: likedListings ?? this.likedListings,
     );
   }
 }

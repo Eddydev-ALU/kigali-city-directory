@@ -94,4 +94,27 @@ class AuthService {
       'notificationsEnabled': enabled,
     });
   }
+
+  /// Toggle a listing in the user's likedListings array in Firestore.
+  /// Pass [isCurrentlyLiked] = true to unlike, false to like.
+  Future<void> toggleLike(
+    String uid,
+    String listingId, {
+    required bool isCurrentlyLiked,
+  }) async {
+    await _firestore.collection('users').doc(uid).update({
+      'likedListings': isCurrentlyLiked
+          ? FieldValue.arrayRemove([listingId])
+          : FieldValue.arrayUnion([listingId]),
+    });
+  }
+
+  /// Real-time stream of liked listing IDs for a user.
+  Stream<List<String>> getLikedListingIds(String uid) {
+    return _firestore.collection('users').doc(uid).snapshots().map((doc) {
+      if (!doc.exists) return <String>[];
+      final data = doc.data() as Map<String, dynamic>;
+      return List<String>.from(data['likedListings'] ?? []);
+    });
+  }
 }

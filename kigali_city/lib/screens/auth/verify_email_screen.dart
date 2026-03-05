@@ -34,6 +34,9 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
         _timer?.cancel();
         // Force idTokenChanges stream to emit the now-verified user.
         await refreshed?.getIdToken(true);
+        // Invalidate the Riverpod auth provider so AuthWrapper re-evaluates
+        // with the fresh emailVerified = true state.
+        if (mounted) ref.invalidate(authStateChangesProvider);
       }
     });
   }
@@ -69,6 +72,8 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
     if (refreshed?.emailVerified == true) {
       // Force idTokenChanges stream to emit the now-verified user.
       await refreshed?.getIdToken(true);
+      // Invalidate so AuthWrapper immediately re-routes to HomeScreen.
+      if (mounted) ref.invalidate(authStateChangesProvider);
     } else if (mounted) {
       setState(() => _checking = false);
       ScaffoldMessenger.of(context).showSnackBar(

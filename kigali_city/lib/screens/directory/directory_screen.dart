@@ -231,16 +231,14 @@ class _CategoryChip extends StatelessWidget {
         label: Text(
           label,
           style: TextStyle(
-            color: isSelected
-                ? AppColors.white
-                : AppColors.white.withAlpha(200),
+            color: isSelected ? AppColors.textDark : AppColors.textDark,
             fontSize: 12,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
         ),
         selected: isSelected,
         onSelected: onSelected,
-        backgroundColor: AppColors.white.withAlpha(30),
+        backgroundColor: AppColors.white.withAlpha(50),
         selectedColor: AppColors.accentYellow,
         checkmarkColor: AppColors.textDark,
         shape: RoundedRectangleBorder(
@@ -248,7 +246,7 @@ class _CategoryChip extends StatelessWidget {
           side: BorderSide(
             color: isSelected
                 ? AppColors.accentYellow
-                : AppColors.white.withAlpha(80),
+                : AppColors.white.withAlpha(140),
           ),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 6),

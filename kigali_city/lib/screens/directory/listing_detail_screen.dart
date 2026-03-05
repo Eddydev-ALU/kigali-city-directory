@@ -1,20 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 import '../../models/listing_model.dart';
+import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
+import '../my_listings/add_edit_listing_screen.dart';
 
-class ListingDetailScreen extends StatefulWidget {
+class ListingDetailScreen extends ConsumerStatefulWidget {
   final ListingModel listing;
 
   const ListingDetailScreen({super.key, required this.listing});
 
   @override
-  State<ListingDetailScreen> createState() => _ListingDetailScreenState();
+  ConsumerState<ListingDetailScreen> createState() =>
+      _ListingDetailScreenState();
 }
 
-class _ListingDetailScreenState extends State<ListingDetailScreen> {
+class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
   Set<Marker> get _markers => {
     Marker(
       markerId: MarkerId(widget.listing.id),
@@ -49,9 +53,23 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
     if (await canLaunchUrl(uri)) await launchUrl(uri);
   }
 
+  Future<void> _toggleLike() async {
+    final user = ref.read(authStateChangesProvider).asData?.value;
+    if (user == null) return;
+    final likedIds = ref.read(likedListingIdsProvider).asData?.value ?? [];
+    final isLiked = likedIds.contains(widget.listing.id);
+    await ref
+        .read(authServiceProvider)
+        .toggleLike(user.uid, widget.listing.id, isCurrentlyLiked: isLiked);
+  }
+
   @override
   Widget build(BuildContext context) {
     final listing = widget.listing;
+    final user = ref.watch(authStateChangesProvider).asData?.value;
+    final likedIds = ref.watch(likedListingIdsProvider).asData?.value ?? [];
+    final isLiked = likedIds.contains(listing.id);
+    final isCreator = user != null && user.uid == listing.createdBy;
 
     return Scaffold(
       body: CustomScrollView(
@@ -59,6 +77,29 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
           SliverAppBar(
             expandedHeight: 260,
             pinned: true,
+            actions: [
+              if (isCreator)
+                IconButton(
+                  icon: const Icon(Icons.edit_rounded),
+                  tooltip: 'Edit listing',
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          AddEditListingScreen(existingListing: listing),
+                    ),
+                  ),
+                ),
+              IconButton(
+                icon: Icon(
+                  isLiked
+                      ? Icons.favorite_rounded
+                      : Icons.favorite_border_rounded,
+                  color: isLiked ? Colors.red.shade300 : Colors.white,
+                ),
+                tooltip: isLiked ? 'Unlike' : 'Like',
+                onPressed: _toggleLike,
+              ),
+            ],
             flexibleSpace: FlexibleSpaceBar(
               title: Text(
                 listing.name,

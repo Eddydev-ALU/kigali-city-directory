@@ -114,3 +114,14 @@ final listingNotifierProvider =
     StateNotifierProvider<ListingNotifier, ListingOperationState>((ref) {
       return ListingNotifier(ref.read(listingServiceProvider));
     });
+
+// ─── Liked Listings (derived from allListings + likedIds) ────────────────────
+
+final likedListingsProvider = Provider<AsyncValue<List<ListingModel>>>((ref) {
+  final allAsync = ref.watch(allListingsStreamProvider);
+  final likedIdsAsync = ref.watch(likedListingIdsProvider);
+  return allAsync.whenData((listings) {
+    final likedIds = likedIdsAsync.asData?.value ?? [];
+    return listings.where((l) => likedIds.contains(l.id)).toList();
+  });
+});

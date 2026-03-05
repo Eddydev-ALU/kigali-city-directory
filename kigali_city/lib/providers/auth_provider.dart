@@ -131,3 +131,11 @@ final currentUserProfileProvider = FutureProvider<UserModel?>((ref) async {
   if (user == null) return null;
   return ref.read(authServiceProvider).getUserProfile(user.uid);
 });
+
+// ─── Liked Listing IDs (real-time stream from user doc) ───────────────────────
+
+final likedListingIdsProvider = StreamProvider<List<String>>((ref) {
+  final user = ref.watch(authStateChangesProvider).asData?.value;
+  if (user == null) return Stream.value([]);
+  return ref.read(authServiceProvider).getLikedListingIds(user.uid);
+});
