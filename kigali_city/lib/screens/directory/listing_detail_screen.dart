@@ -77,6 +77,8 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
           SliverAppBar(
             expandedHeight: 260,
             pinned: true,
+            backgroundColor: AppColors.primaryBlue,
+            foregroundColor: AppColors.white,
             actions: [
               if (isCreator)
                 IconButton(
@@ -110,25 +112,44 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
-              background: GoogleMap(
-                onMapCreated: (c) {
-                  c.animateCamera(
-                    CameraUpdate.newCameraPosition(
-                      CameraPosition(
-                        target: LatLng(listing.latitude, listing.longitude),
-                        zoom: 15,
+              background: Stack(
+                children: [
+                  GoogleMap(
+                    onMapCreated: (c) {
+                      c.animateCamera(
+                        CameraUpdate.newCameraPosition(
+                          CameraPosition(
+                            target: LatLng(listing.latitude, listing.longitude),
+                            zoom: 15,
+                          ),
+                        ),
+                      );
+                    },
+                    initialCameraPosition: CameraPosition(
+                      target: LatLng(listing.latitude, listing.longitude),
+                      zoom: 15,
+                    ),
+                    markers: _markers,
+                    zoomControlsEnabled: false,
+                    myLocationButtonEnabled: false,
+                    mapToolbarEnabled: false,
+                  ),
+                  // Blue gradient at the top so the action icons always sit
+                  // on a blue background, even when the bar is fully expanded.
+                  Container(
+                    height: 100,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          AppColors.primaryBlue,
+                          AppColors.primaryBlue.withAlpha(0),
+                        ],
                       ),
                     ),
-                  );
-                },
-                initialCameraPosition: CameraPosition(
-                  target: LatLng(listing.latitude, listing.longitude),
-                  zoom: 15,
-                ),
-                markers: _markers,
-                zoomControlsEnabled: false,
-                myLocationButtonEnabled: false,
-                mapToolbarEnabled: false,
+                  ),
+                ],
               ),
             ),
           ),

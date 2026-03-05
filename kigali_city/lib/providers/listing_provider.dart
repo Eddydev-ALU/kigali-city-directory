@@ -10,8 +10,13 @@ final listingServiceProvider = Provider<ListingService>(
 );
 
 // ─── All Listings (real-time stream) ─────────────────────────────────────────
-
+// Watch authStateChangesProvider so the stream is (re)created only after the
+// Firebase Auth token is fully available. This prevents the
+// permission-denied error that occurs when Firestore is queried
+// before the token has propagated on first login.
 final allListingsStreamProvider = StreamProvider<List<ListingModel>>((ref) {
+  final user = ref.watch(authStateChangesProvider).asData?.value;
+  if (user == null) return Stream.value([]);
   return ref.read(listingServiceProvider).getAllListings();
 });
 
@@ -21,7 +26,14 @@ final myListingsStreamProvider = StreamProvider.autoDispose<List<ListingModel>>(
   (ref) {
     final user = ref.watch(authStateChangesProvider).asData?.value;
     if (user == null) return Stream.value([]);
-    return ref.read(listingServiceProvider).getMyListings(user.uid);
+    // getMyListings no longer uses orderBy to avoid requiring a composite
+    // Firestore index. Results are sorted in-memory here instead.
+    return ref
+        .read(listingServiceProvider)
+        .getMyListings(user.uid)
+        .map(
+          (list) => list..sort((a, b) => b.timestamp.compareTo(a.timestamp)),
+        );
   },
 );
 

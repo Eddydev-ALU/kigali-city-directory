@@ -15,11 +15,12 @@ class ListingService {
         .map((snap) => snap.docs.map(ListingModel.fromFirestore).toList());
   }
 
-  /// Stream of listings created by a specific user
+  /// Stream of listings created by a specific user.
+  /// Intentionally no orderBy to avoid requiring a composite Firestore index
+  /// (where + orderBy on different fields). Sorting is done in-memory by the provider.
   Stream<List<ListingModel>> getMyListings(String uid) {
     return _listings
         .where('createdBy', isEqualTo: uid)
-        .orderBy('timestamp', descending: true)
         .snapshots()
         .map((snap) => snap.docs.map(ListingModel.fromFirestore).toList());
   }
