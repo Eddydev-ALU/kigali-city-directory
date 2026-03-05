@@ -5,6 +5,7 @@ import 'firebase_options.dart';
 import 'providers/auth_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/verify_email_screen.dart';
+import 'screens/auth/welcome_screen.dart';
 import 'screens/home/home_screen.dart';
 import 'theme/app_theme.dart';
 
@@ -45,7 +46,7 @@ class AuthWrapper extends ConsumerWidget {
       loading: () => const _SplashScreen(),
       error: (e, _) => const LoginScreen(),
       data: (user) {
-        if (user == null) return const LoginScreen();
+        if (user == null) return const WelcomeScreen();
         if (!user.emailVerified) return const VerifyEmailScreen();
         return const HomeScreen();
       },
