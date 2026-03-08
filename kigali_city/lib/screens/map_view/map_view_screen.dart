@@ -19,6 +19,7 @@ class _MapViewScreenState extends ConsumerState<MapViewScreen> {
 
   static const _kigaliCenter = LatLng(-1.9441, 30.0619);
   static const _initialZoom = 14.0;
+  static const _flyToZoom = 17.0;
 
   Color _colorForCategory(String category) {
     switch (category) {
@@ -43,6 +44,19 @@ class _MapViewScreenState extends ConsumerState<MapViewScreen> {
       default:
         return AppColors.primaryBlue;
     }
+  }
+
+  /// Fly the map to [listing] then open its info sheet.
+  void _flyToAndShow(BuildContext context, ListingModel listing) {
+    _mapController.move(
+      LatLng(listing.latitude, listing.longitude),
+      _flyToZoom,
+    );
+    // Small delay so the camera animation is visible before the sheet appears.
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (!context.mounted) return;
+      _showListingSheet(context, listing);
+    });
   }
 
   void _showListingSheet(BuildContext context, ListingModel listing) {
@@ -120,6 +134,26 @@ class _MapViewScreenState extends ConsumerState<MapViewScreen> {
     );
   }
 
+  /// Shows a searchable list of all listings so the user can pick one to
+  /// fly to. Used when there are 2 or more locations.
+  void _showLocationChooser(BuildContext context, List<ListingModel> listings) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetCtx) => _LocationChooser(
+        listings: listings,
+        colorForCategory: _colorForCategory,
+        onSelected: (listing) {
+          Navigator.of(sheetCtx).pop();
+          _flyToAndShow(context, listing);
+        },
+      ),
+    );
+  }
+
   List<Marker> _buildMarkers(
     List<ListingModel> listings,
     BuildContext context,
@@ -133,11 +167,9 @@ class _MapViewScreenState extends ConsumerState<MapViewScreen> {
         width: 44,
         height: 44,
         child: GestureDetector(
-          onTap: () => _showListingSheet(context, listing),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [Icon(Icons.location_pin, color: color, size: 38)],
-          ),
+          // Fly to the marker first, then show the info sheet.
+          onTap: () => _flyToAndShow(context, listing),
+          child: Icon(Icons.location_pin, color: color, size: 38),
         ),
       );
     }).toList();
@@ -154,9 +186,7 @@ class _MapViewScreenState extends ConsumerState<MapViewScreen> {
           IconButton(
             icon: const Icon(Icons.center_focus_strong_rounded),
             tooltip: 'Back to Kigali',
-            onPressed: () {
-              _mapController.move(_kigaliCenter, _initialZoom);
-            },
+            onPressed: () => _mapController.move(_kigaliCenter, _initialZoom),
           ),
         ],
       ),
@@ -166,7 +196,11 @@ class _MapViewScreenState extends ConsumerState<MapViewScreen> {
         ),
         error: (e, _) => Center(child: Text('Error loading map data: $e')),
         data: (listings) {
+          final validListings = listings
+              .where((l) => l.latitude != 0.0 || l.longitude != 0.0)
+              .toList();
           final markers = _buildMarkers(listings, context);
+
           return Stack(
             children: [
               FlutterMap(
@@ -183,51 +217,70 @@ class _MapViewScreenState extends ConsumerState<MapViewScreen> {
                         'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                     userAgentPackageName: 'com.kigali.city',
                     maxZoom: 19,
+                    // Fetch higher-res tiles on retina / high-DPI screens.
+                    retinaMode: MediaQuery.devicePixelRatioOf(context) >= 2,
                   ),
                   MarkerLayer(markers: markers),
                 ],
               ),
-              // Location count badge
+
+              // ── Tappable location badge ────────────────────────────────────
               Positioned(
                 bottom: 16,
                 left: 16,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withAlpha(30),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.place_rounded,
-                        color: AppColors.primaryBlue,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        '${listings.length} location${listings.length == 1 ? '' : 's'}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textDark,
-                          fontSize: 13,
+                child: GestureDetector(
+                  onTap: validListings.isEmpty
+                      ? null
+                      : validListings.length == 1
+                      ? () => _flyToAndShow(context, validListings.first)
+                      : () => _showLocationChooser(context, validListings),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withAlpha(30),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.place_rounded,
+                          color: AppColors.primaryBlue,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          '${validListings.length} location${validListings.length == 1 ? '' : 's'}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textDark,
+                            fontSize: 13,
+                          ),
+                        ),
+                        if (validListings.isNotEmpty) ...[
+                          const SizedBox(width: 4),
+                          const Icon(
+                            Icons.arrow_drop_up_rounded,
+                            size: 18,
+                            color: AppColors.primaryBlue,
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
                 ),
               ),
+
               // OSM attribution (required by OSM terms)
               Positioned(
                 bottom: 16,
@@ -250,6 +303,158 @@ class _MapViewScreenState extends ConsumerState<MapViewScreen> {
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+// ─── Location Chooser Sheet ────────────────────────────────────────────────────
+
+class _LocationChooser extends StatefulWidget {
+  final List<ListingModel> listings;
+  final Color Function(String) colorForCategory;
+  final void Function(ListingModel) onSelected;
+
+  const _LocationChooser({
+    required this.listings,
+    required this.colorForCategory,
+    required this.onSelected,
+  });
+
+  @override
+  State<_LocationChooser> createState() => _LocationChooserState();
+}
+
+class _LocationChooserState extends State<_LocationChooser> {
+  String _query = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final filtered = _query.isEmpty
+        ? widget.listings
+        : widget.listings
+              .where(
+                (l) =>
+                    l.name.toLowerCase().contains(_query) ||
+                    l.category.toLowerCase().contains(_query) ||
+                    l.address.toLowerCase().contains(_query),
+              )
+              .toList();
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.55,
+      minChildSize: 0.35,
+      maxChildSize: 0.92,
+      expand: false,
+      builder: (_, scrollController) => Column(
+        children: [
+          // Handle bar
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+            child: Row(
+              children: [
+                const Icon(Icons.search_rounded, color: AppColors.primaryBlue),
+                const SizedBox(width: 8),
+                const Text(
+                  'Go to location',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textDark,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  '${filtered.length} result${filtered.length == 1 ? '' : 's'}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textMedium,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: TextField(
+              autofocus: false,
+              onChanged: (v) => setState(() => _query = v.toLowerCase().trim()),
+              decoration: InputDecoration(
+                hintText: 'Search by name, category or address…',
+                prefixIcon: const Icon(Icons.search_rounded),
+                contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Expanded(
+            child: filtered.isEmpty
+                ? const Center(
+                    child: Text(
+                      'No matching locations',
+                      style: TextStyle(color: AppColors.textMedium),
+                    ),
+                  )
+                : ListView.builder(
+                    controller: scrollController,
+                    itemCount: filtered.length,
+                    itemBuilder: (_, i) {
+                      final listing = filtered[i];
+                      final color = widget.colorForCategory(listing.category);
+                      return ListTile(
+                        leading: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: color.withAlpha(30),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            Icons.location_pin,
+                            color: color,
+                            size: 22,
+                          ),
+                        ),
+                        title: Text(
+                          listing.name,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
+                        subtitle: Text(
+                          '${listing.category} · ${listing.address}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textMedium,
+                          ),
+                        ),
+                        trailing: const Icon(
+                          Icons.my_location_rounded,
+                          size: 18,
+                          color: AppColors.primaryBlue,
+                        ),
+                        onTap: () => widget.onSelected(listing),
+                      );
+                    },
+                  ),
+          ),
+        ],
       ),
     );
   }
