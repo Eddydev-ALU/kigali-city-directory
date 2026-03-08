@@ -1,6 +1,7 @@
 // ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../models/listing_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/listing_provider.dart';
@@ -26,7 +27,56 @@ class _AddEditListingScreenState extends ConsumerState<AddEditListingScreen> {
   final _lngController = TextEditingController();
 
   String _selectedCategory = ListingModel.categories.first;
+  bool _isLoadingLocation = false;
   bool get _isEditing => widget.existingListing != null;
+
+  Future<void> _useMyLocation() async {
+    setState(() => _isLoadingLocation = true);
+    try {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Location permission denied')),
+            );
+          }
+          return;
+        }
+      }
+      if (permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Location permissions permanently denied. Please enable in settings.',
+              ),
+            ),
+          );
+        }
+        return;
+      }
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
+      );
+      if (mounted) {
+        _latController.text = pos.latitude.toStringAsFixed(6);
+        _lngController.text = pos.longitude.toStringAsFixed(6);
+        setState(() {});
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Could not get location: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _isLoadingLocation = false);
+    }
+  }
 
   @override
   void initState() {
@@ -223,10 +273,32 @@ class _AddEditListingScreenState extends ConsumerState<AddEditListingScreen> {
                     ),
                     const SizedBox(height: 4),
                     const Text(
-                      'Enter the exact latitude and longitude of the location.',
+                      'Enter coordinates manually or tap "Use My Location" to fill them automatically.',
                       style: TextStyle(
                         color: AppColors.textMedium,
                         fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        icon: _isLoadingLocation
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.primaryBlue,
+                                ),
+                              )
+                            : const Icon(Icons.my_location_rounded),
+                        label: Text(
+                          _isLoadingLocation
+                              ? 'Getting location...'
+                              : 'Use My Location',
+                        ),
+                        onPressed: _isLoadingLocation ? null : _useMyLocation,
                       ),
                     ),
                     const SizedBox(height: 12),

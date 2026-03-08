@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 import '../../models/listing_model.dart';
@@ -19,17 +20,6 @@ class ListingDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
-  Set<Marker> get _markers => {
-    Marker(
-      markerId: MarkerId(widget.listing.id),
-      position: LatLng(widget.listing.latitude, widget.listing.longitude),
-      infoWindow: InfoWindow(
-        title: widget.listing.name,
-        snippet: widget.listing.address,
-      ),
-    ),
-  };
-
   Future<void> _launchNavigation() async {
     final lat = widget.listing.latitude;
     final lng = widget.listing.longitude;
@@ -114,25 +104,48 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
               ),
               background: Stack(
                 children: [
-                  GoogleMap(
-                    onMapCreated: (c) {
-                      c.animateCamera(
-                        CameraUpdate.newCameraPosition(
-                          CameraPosition(
-                            target: LatLng(listing.latitude, listing.longitude),
-                            zoom: 15,
-                          ),
+                  // IgnorePointer is essential: without it the FlutterMap's
+                  // gesture detector swallows all touches and freezes the
+                  // entire CustomScrollView / SliverAppBar.
+                  IgnorePointer(
+                    child: FlutterMap(
+                      options: MapOptions(
+                        initialCenter: LatLng(
+                          listing.latitude,
+                          listing.longitude,
                         ),
-                      );
-                    },
-                    initialCameraPosition: CameraPosition(
-                      target: LatLng(listing.latitude, listing.longitude),
-                      zoom: 15,
+                        initialZoom: 16,
+                        maxZoom: 19,
+                        interactionOptions: const InteractionOptions(
+                          flags: InteractiveFlag.none,
+                        ),
+                      ),
+                      children: [
+                        TileLayer(
+                          urlTemplate:
+                              'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          userAgentPackageName: 'com.kigali.city',
+                          maxZoom: 19,
+                        ),
+                        MarkerLayer(
+                          markers: [
+                            Marker(
+                              point: LatLng(
+                                listing.latitude,
+                                listing.longitude,
+                              ),
+                              width: 44,
+                              height: 44,
+                              child: const Icon(
+                                Icons.location_pin,
+                                color: Colors.red,
+                                size: 40,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                    markers: _markers,
-                    zoomControlsEnabled: false,
-                    myLocationButtonEnabled: false,
-                    mapToolbarEnabled: false,
                   ),
                   // Blue gradient at the top so the action icons always sit
                   // on a blue background, even when the bar is fully expanded.

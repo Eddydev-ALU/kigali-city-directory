@@ -34,6 +34,8 @@ class _MyListingsScreenState extends ConsumerState<MyListingsScreen>
     BuildContext context,
     ListingModel listing,
   ) async {
+    // Capture before any async gap.
+    final messenger = ScaffoldMessenger.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -63,7 +65,7 @@ class _MyListingsScreenState extends ConsumerState<MyListingsScreen>
           .read(listingNotifierProvider.notifier)
           .deleteListing(listing.id);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        messenger.showSnackBar(
           SnackBar(
             content: Text(
               success ? 'Listing deleted' : 'Failed to delete listing',
