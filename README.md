@@ -165,7 +165,7 @@ kigali-city-directory/
         │   │   └── map_view_screen.dart    
         │   ├── my_listings/
         │   │   ├── my_listings_screen.dart 
-        │   │   └── add_edit_listing_screen.dart  # GPS "Use My Location" button
+        │   │   └── add_edit_listing_screen.dart  
         │   └── settings/
         │       └── settings_screen.dart
         ├── services/
@@ -215,5 +215,3 @@ flutter build ipa
 | `intl` | ^0.20.1 | Date formatting |
 | `shared_preferences` | ^2.3.3 | Local settings persistence |
 | `uuid` | ^4.5.1 | Unique ID generation |
-
----

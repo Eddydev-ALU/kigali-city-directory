@@ -21,6 +21,13 @@ class _MapViewScreenState extends ConsumerState<MapViewScreen> {
   static const _initialZoom = 14.0;
   static const _flyToZoom = 17.0;
 
+  // Rwanda bounding box — prevents panning outside the country.
+  // SW: (-2.8389, 28.8617)  NE: (-1.0474, 30.8990)
+  static final _rwandaBounds = LatLngBounds(
+    const LatLng(-2.8389, 28.8617),
+    const LatLng(-1.0474, 30.8990),
+  );
+
   Color _colorForCategory(String category) {
     switch (category) {
       case 'Hospital':
@@ -164,10 +171,12 @@ class _MapViewScreenState extends ConsumerState<MapViewScreen> {
       final color = _colorForCategory(listing.category);
       return Marker(
         point: LatLng(listing.latitude, listing.longitude),
-        width: 44,
+        width: 38,
         height: 44,
+        // Align the bottom-centre of the widget (the pin tip) to the
+        // coordinate, so the marker points at the exact location.
+        alignment: Alignment.bottomCenter,
         child: GestureDetector(
-          // Fly to the marker first, then show the info sheet.
           onTap: () => _flyToAndShow(context, listing),
           child: Icon(Icons.location_pin, color: color, size: 38),
         ),
@@ -205,11 +214,16 @@ class _MapViewScreenState extends ConsumerState<MapViewScreen> {
             children: [
               FlutterMap(
                 mapController: _mapController,
-                options: const MapOptions(
+                options: MapOptions(
                   initialCenter: _kigaliCenter,
                   initialZoom: _initialZoom,
+                  // Zoom limits: 8 gives a full Rwanda overview; 19 is street-level.
+                  minZoom: 8,
                   maxZoom: 19,
-                  minZoom: 5,
+                  // Prevent the user from panning outside Rwanda.
+                  cameraConstraint: CameraConstraint.containCenter(
+                    bounds: _rwandaBounds,
+                  ),
                 ),
                 children: [
                   TileLayer(
