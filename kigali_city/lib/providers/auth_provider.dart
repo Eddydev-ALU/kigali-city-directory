@@ -3,22 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/auth_service.dart';
 import '../models/user_model.dart';
 
-// ─── Service Provider ───────────────────────────────────────────────────────
 
 final authServiceProvider = Provider<AuthService>((ref) => AuthService());
 
-// ─── Auth State Stream (is user logged in?) ─────────────────────────────────
 
 final authStateChangesProvider = StreamProvider<User?>((ref) {
   return ref.read(authServiceProvider).authStateChanges;
 });
 
 /// True while [AuthNotifier.signUp] is completing the Firestore profile write
-/// and sending the verification email. AuthWrapper shows a loading screen
-/// during this window so the half-finished state is never visible to the user.
 final signupInProgressProvider = StateProvider<bool>((ref) => false);
 
-// ─── Auth Operation State ───────────────────────────────────────────────────
 
 class AuthState {
   final bool isLoading;
@@ -45,8 +40,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required String displayName,
   }) async {
     state = const AuthState(isLoading: true);
-    // Hold AuthWrapper navigation until the Firestore profile write and
-    // verification email are fully complete.
     _ref.read(signupInProgressProvider.notifier).state = true;
     try {
       await _authService.signUp(
@@ -124,7 +117,6 @@ final authNotifierProvider = StateNotifierProvider<AuthNotifier, AuthState>((
   return AuthNotifier(ref.read(authServiceProvider), ref);
 });
 
-// ─── Current User Profile ────────────────────────────────────────────────────
 
 final currentUserProfileProvider = FutureProvider<UserModel?>((ref) async {
   final user = ref.watch(authStateChangesProvider).asData?.value;
@@ -132,7 +124,6 @@ final currentUserProfileProvider = FutureProvider<UserModel?>((ref) async {
   return ref.read(authServiceProvider).getUserProfile(user.uid);
 });
 
-// ─── Liked Listing IDs (real-time stream from user doc) ───────────────────────
 
 final likedListingIdsProvider = StreamProvider<List<String>>((ref) {
   final user = ref.watch(authStateChangesProvider).asData?.value;

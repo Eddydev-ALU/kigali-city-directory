@@ -143,8 +143,6 @@ class _MapViewScreenState extends ConsumerState<MapViewScreen> {
     );
   }
 
-  /// Shows a searchable list of all listings so the user can pick one to
-  /// fly to. Used when there are 2 or more locations.
   void _showLocationChooser(BuildContext context, List<ListingModel> listings) {
     showModalBottomSheet(
       context: context,
@@ -196,7 +194,6 @@ class _MapViewScreenState extends ConsumerState<MapViewScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Header ──────────────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 12, 10),
               child: Row(
@@ -245,7 +242,6 @@ class _MapViewScreenState extends ConsumerState<MapViewScreen> {
               ),
             ),
 
-            // ── Map ───────────────────────────────────────────────────────
             Expanded(
               child: listingsAsync.when(
                 loading: () => const Center(
@@ -268,7 +264,6 @@ class _MapViewScreenState extends ConsumerState<MapViewScreen> {
                         options: MapOptions(
                           initialCenter: _kigaliCenter,
                           initialZoom: _initialZoom,
-                          // Zoom limits: 8 gives a full Rwanda overview; 19 is street-level.
                           minZoom: 8,
                           maxZoom: 19,
                           // Prevent the user from panning outside Rwanda.
@@ -279,8 +274,6 @@ class _MapViewScreenState extends ConsumerState<MapViewScreen> {
                         children: [
                           if (_isSatellite)
                             TileLayer(
-                              // Esri World Imagery — free-to-use satellite tiles.
-                              // Note: Esri's tile URL uses {z}/{y}/{x} order (y before x).
                               urlTemplate:
                                   'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
                               userAgentPackageName: 'com.kigali.city',
@@ -300,7 +293,6 @@ class _MapViewScreenState extends ConsumerState<MapViewScreen> {
                         ],
                       ),
 
-                      // ── Tappable location badge ────────────────────────────────────
                       Positioned(
                         bottom: 16,
                         left: 16,
@@ -361,7 +353,6 @@ class _MapViewScreenState extends ConsumerState<MapViewScreen> {
                         ),
                       ),
 
-                      // Tile attribution (required by both OSM and Esri terms)
                       Positioned(
                         bottom: 16,
                         right: 16,
@@ -397,7 +388,6 @@ class _MapViewScreenState extends ConsumerState<MapViewScreen> {
   }
 }
 
-// ─── Map Header Button ──────────────────────────────────────────────────────────────
 
 class _MapHeaderButton extends StatelessWidget {
   final IconData icon;
@@ -437,7 +427,6 @@ class _MapHeaderButton extends StatelessWidget {
   }
 }
 
-// ─── Location Chooser Sheet ────────────────────────────────────────────────────────
 
 class _LocationChooser extends StatefulWidget {
   final List<ListingModel> listings;

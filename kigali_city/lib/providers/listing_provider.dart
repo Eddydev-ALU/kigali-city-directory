@@ -3,21 +3,11 @@ import '../models/listing_model.dart';
 import '../services/listing_service.dart';
 import 'auth_provider.dart';
 
-// ─── Service Provider ────────────────────────────────────────────────────────
 
 final listingServiceProvider = Provider<ListingService>(
   (ref) => ListingService(),
 );
 
-// ─── All Listings (real-time stream) ─────────────────────────────────────────
-// Watch authStateChangesProvider so the stream is (re)created only after the
-// Firebase Auth token is fully available. This prevents the
-// permission-denied error that occurs when Firestore is queried
-// before the token has propagated on first login.
-// Use .select() on the UID only — Firebase Auth emits multiple events during
-// init (loading → cached user → token-refreshed user). Without select(), every
-// emission causes a new Firestore subscription and a brief AsyncLoading flash
-// that wipes the visible listing list and shows a spinner.
 final allListingsStreamProvider = StreamProvider<List<ListingModel>>((ref) {
   final uid = ref.watch(
     authStateChangesProvider.select((v) => v.asData?.value?.uid),
@@ -26,14 +16,11 @@ final allListingsStreamProvider = StreamProvider<List<ListingModel>>((ref) {
   return ref.read(listingServiceProvider).getAllListings();
 });
 
-// ─── My Listings (real-time stream, current user only) ───────────────────────
 
 final myListingsStreamProvider = StreamProvider.autoDispose<List<ListingModel>>(
   (ref) {
     final user = ref.watch(authStateChangesProvider).asData?.value;
     if (user == null) return Stream.value([]);
-    // getMyListings no longer uses orderBy to avoid requiring a composite
-    // Firestore index. Results are sorted in-memory here instead.
     return ref
         .read(listingServiceProvider)
         .getMyListings(user.uid)
@@ -43,12 +30,10 @@ final myListingsStreamProvider = StreamProvider.autoDispose<List<ListingModel>>(
   },
 );
 
-// ─── Search & Filter State ────────────────────────────────────────────────────
 
 final searchQueryProvider = StateProvider<String>((ref) => '');
 final categoryFilterProvider = StateProvider<String?>((ref) => null);
 
-// ─── Filtered Listings ────────────────────────────────────────────────────────
 
 final filteredListingsProvider = Provider<AsyncValue<List<ListingModel>>>((
   ref,
@@ -70,7 +55,6 @@ final filteredListingsProvider = Provider<AsyncValue<List<ListingModel>>>((
   });
 });
 
-// ─── Listing CRUD Operations State ───────────────────────────────────────────
 
 class ListingOperationState {
   final bool isLoading;
@@ -133,7 +117,6 @@ final listingNotifierProvider =
       return ListingNotifier(ref.read(listingServiceProvider));
     });
 
-// ─── Liked Listings (derived from allListings + likedIds) ────────────────────
 
 final likedListingsProvider = Provider<AsyncValue<List<ListingModel>>>((ref) {
   final allAsync = ref.watch(allListingsStreamProvider);
