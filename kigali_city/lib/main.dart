@@ -29,14 +29,11 @@ class KigaliCityApp extends StatelessWidget {
   }
 }
 
-/// Routes the user to the correct screen based on their auth state.
 class AuthWrapper extends ConsumerWidget {
   const AuthWrapper({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // While signup is in progress (Firestore write + verification email send)
-    // keep showing the splash so the UI never reflects a half-finished state.
     final signupInProgress = ref.watch(signupInProgressProvider);
     if (signupInProgress) return const _SplashScreen();
 

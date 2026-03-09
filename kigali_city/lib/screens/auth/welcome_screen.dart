@@ -12,7 +12,6 @@ class WelcomeScreen extends StatelessWidget {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // ── Full-screen background image ─────────────────────────────────
           Container(
             decoration: const BoxDecoration(
               image: DecorationImage(
@@ -22,10 +21,8 @@ class WelcomeScreen extends StatelessWidget {
             ),
           ),
 
-          // ── Subtle dark overlay – image stays clearly visible ──────────
           Container(color: const Color(0x55000000)),
 
-          // ── Content ───────────────────────────────────────────────────────
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 28),
@@ -34,7 +31,6 @@ class WelcomeScreen extends StatelessWidget {
                 children: [
                   const SizedBox(height: 36),
 
-                  // Small label
                   Text(
                     'Kigali City Directory',
                     style: TextStyle(
@@ -46,7 +42,6 @@ class WelcomeScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 52),
 
-                  // Catchy headline – 3 words
                   const Text(
                     'Discover.\nExplore.\nConnect.',
                     style: TextStyle(
@@ -60,7 +55,6 @@ class WelcomeScreen extends StatelessWidget {
 
                   const Spacer(),
 
-                  // ── Glassy Start button ──────────────────────────────────
                   Center(
                     child: SizedBox(
                       width: MediaQuery.of(context).size.width * 0.80,

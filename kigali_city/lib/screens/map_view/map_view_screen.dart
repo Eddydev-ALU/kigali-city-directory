@@ -17,6 +17,8 @@ class MapViewScreen extends ConsumerStatefulWidget {
 class _MapViewScreenState extends ConsumerState<MapViewScreen> {
   final MapController _mapController = MapController();
 
+  bool _isSatellite = false;
+
   static const _kigaliCenter = LatLng(-1.9441, 30.0619);
   static const _initialZoom = 14.0;
   static const _flyToZoom = 17.0;
@@ -189,140 +191,253 @@ class _MapViewScreenState extends ConsumerState<MapViewScreen> {
     final listingsAsync = ref.watch(allListingsStreamProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Map View'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.center_focus_strong_rounded),
-            tooltip: 'Back to Kigali',
-            onPressed: () => _mapController.move(_kigaliCenter, _initialZoom),
-          ),
-        ],
-      ),
-      body: listingsAsync.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: AppColors.primaryBlue),
-        ),
-        error: (e, _) => Center(child: Text('Error loading map data: $e')),
-        data: (listings) {
-          final validListings = listings
-              .where((l) => l.latitude != 0.0 || l.longitude != 0.0)
-              .toList();
-          final markers = _buildMarkers(listings, context);
-
-          return Stack(
-            children: [
-              FlutterMap(
-                mapController: _mapController,
-                options: MapOptions(
-                  initialCenter: _kigaliCenter,
-                  initialZoom: _initialZoom,
-                  // Zoom limits: 8 gives a full Rwanda overview; 19 is street-level.
-                  minZoom: 8,
-                  maxZoom: 19,
-                  // Prevent the user from panning outside Rwanda.
-                  cameraConstraint: CameraConstraint.containCenter(
-                    bounds: _rwandaBounds,
-                  ),
-                ),
+      backgroundColor: AppColors.white,
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Header ──────────────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 12, 10),
+              child: Row(
                 children: [
-                  TileLayer(
-                    urlTemplate:
-                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    userAgentPackageName: 'com.kigali.city',
-                    maxZoom: 19,
-                    // Fetch higher-res tiles on retina / high-DPI screens.
-                    retinaMode: MediaQuery.devicePixelRatioOf(context) >= 2,
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Map View',
+                          style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textDark,
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'Explore Kigali & Rwanda',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textMedium,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  MarkerLayer(markers: markers),
+                  // Satellite / Street toggle
+                  _MapHeaderButton(
+                    icon: _isSatellite
+                        ? Icons.map_rounded
+                        : Icons.satellite_alt_rounded,
+                    tooltip: _isSatellite ? 'Street view' : 'Satellite view',
+                    onPressed: () =>
+                        setState(() => _isSatellite = !_isSatellite),
+                  ),
+                  const SizedBox(width: 8),
+                  // Re-centre
+                  _MapHeaderButton(
+                    icon: Icons.center_focus_strong_rounded,
+                    tooltip: 'Back to Kigali',
+                    onPressed: () =>
+                        _mapController.move(_kigaliCenter, _initialZoom),
+                  ),
                 ],
               ),
+            ),
 
-              // ── Tappable location badge ────────────────────────────────────
-              Positioned(
-                bottom: 16,
-                left: 16,
-                child: GestureDetector(
-                  onTap: validListings.isEmpty
-                      ? null
-                      : validListings.length == 1
-                      ? () => _flyToAndShow(context, validListings.first)
-                      : () => _showLocationChooser(context, validListings),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withAlpha(30),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.place_rounded,
-                          color: AppColors.primaryBlue,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          '${validListings.length} location${validListings.length == 1 ? '' : 's'}',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textDark,
-                            fontSize: 13,
+            // ── Map ───────────────────────────────────────────────────────
+            Expanded(
+              child: listingsAsync.when(
+                loading: () => const Center(
+                  child: CircularProgressIndicator(
+                    color: AppColors.primaryBlue,
+                  ),
+                ),
+                error: (e, _) =>
+                    Center(child: Text('Error loading map data: $e')),
+                data: (listings) {
+                  final validListings = listings
+                      .where((l) => l.latitude != 0.0 || l.longitude != 0.0)
+                      .toList();
+                  final markers = _buildMarkers(listings, context);
+
+                  return Stack(
+                    children: [
+                      FlutterMap(
+                        mapController: _mapController,
+                        options: MapOptions(
+                          initialCenter: _kigaliCenter,
+                          initialZoom: _initialZoom,
+                          // Zoom limits: 8 gives a full Rwanda overview; 19 is street-level.
+                          minZoom: 8,
+                          maxZoom: 19,
+                          // Prevent the user from panning outside Rwanda.
+                          cameraConstraint: CameraConstraint.containCenter(
+                            bounds: _rwandaBounds,
                           ),
                         ),
-                        if (validListings.isNotEmpty) ...[
-                          const SizedBox(width: 4),
-                          const Icon(
-                            Icons.arrow_drop_up_rounded,
-                            size: 18,
-                            color: AppColors.primaryBlue,
-                          ),
+                        children: [
+                          if (_isSatellite)
+                            TileLayer(
+                              // Esri World Imagery — free-to-use satellite tiles.
+                              // Note: Esri's tile URL uses {z}/{y}/{x} order (y before x).
+                              urlTemplate:
+                                  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                              userAgentPackageName: 'com.kigali.city',
+                              maxZoom: 19,
+                            )
+                          else
+                            TileLayer(
+                              urlTemplate:
+                                  'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                              userAgentPackageName: 'com.kigali.city',
+                              maxZoom: 19,
+                              // Fetch higher-res tiles on retina / high-DPI screens.
+                              retinaMode:
+                                  MediaQuery.devicePixelRatioOf(context) >= 2,
+                            ),
+                          MarkerLayer(markers: markers),
                         ],
-                      ],
-                    ),
-                  ),
-                ),
-              ),
+                      ),
 
-              // OSM attribution (required by OSM terms)
-              Positioned(
-                bottom: 16,
-                right: 16,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.white.withAlpha(220),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Text(
-                    '© OpenStreetMap contributors',
-                    style: TextStyle(fontSize: 9, color: AppColors.textMedium),
-                  ),
-                ),
+                      // ── Tappable location badge ────────────────────────────────────
+                      Positioned(
+                        bottom: 16,
+                        left: 16,
+                        child: GestureDetector(
+                          onTap: validListings.isEmpty
+                              ? null
+                              : validListings.length == 1
+                              ? () =>
+                                    _flyToAndShow(context, validListings.first)
+                              : () => _showLocationChooser(
+                                  context,
+                                  validListings,
+                                ),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withAlpha(30),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.place_rounded,
+                                  color: AppColors.primaryBlue,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  '${validListings.length} location${validListings.length == 1 ? '' : 's'}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.textDark,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                if (validListings.isNotEmpty) ...[
+                                  const SizedBox(width: 4),
+                                  const Icon(
+                                    Icons.arrow_drop_up_rounded,
+                                    size: 18,
+                                    color: AppColors.primaryBlue,
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      // Tile attribution (required by both OSM and Esri terms)
+                      Positioned(
+                        bottom: 16,
+                        right: 16,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.white.withAlpha(220),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            _isSatellite
+                                ? '© Esri, Maxar, Earthstar Geographics'
+                                : '© OpenStreetMap contributors',
+                            style: const TextStyle(
+                              fontSize: 9,
+                              color: AppColors.textMedium,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
-            ],
-          );
-        },
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-// ─── Location Chooser Sheet ────────────────────────────────────────────────────
+// ─── Map Header Button ──────────────────────────────────────────────────────────────
+
+class _MapHeaderButton extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onPressed;
+
+  const _MapHeaderButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: GestureDetector(
+        onTap: onPressed,
+        child: Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: AppColors.lightGrey,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha(18),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Icon(icon, color: AppColors.textDark, size: 22),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Location Chooser Sheet ────────────────────────────────────────────────────────
 
 class _LocationChooser extends StatefulWidget {
   final List<ListingModel> listings;

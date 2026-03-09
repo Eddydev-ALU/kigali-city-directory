@@ -20,11 +20,6 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
   @override
   void initState() {
     super.initState();
-    // Poll every 3 seconds. When the user has clicked the link:
-    //  1. reload() pulls the latest emailVerified flag from Firebase.
-    //  2. getIdToken(true) forces a token refresh which causes the
-    //     idTokenChanges() stream (used by authStateChangesProvider) to
-    //     re-emit with the updated user, so AuthWrapper navigates home.
     _timer = Timer.periodic(const Duration(seconds: 3), (_) async {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) return;
@@ -32,10 +27,7 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
       final refreshed = FirebaseAuth.instance.currentUser;
       if (refreshed?.emailVerified == true) {
         _timer?.cancel();
-        // Force idTokenChanges stream to emit the now-verified user.
         await refreshed?.getIdToken(true);
-        // Invalidate the Riverpod auth provider so AuthWrapper re-evaluates
-        // with the fresh emailVerified = true state.
         if (mounted) ref.invalidate(authStateChangesProvider);
       }
     });
@@ -58,7 +50,6 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
         ),
       );
     }
-    // Keep cooldown for 30 seconds
     Future.delayed(const Duration(seconds: 30), () {
       if (mounted) setState(() => _resendCooldown = false);
     });
@@ -70,9 +61,7 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
     await user?.reload();
     final refreshed = FirebaseAuth.instance.currentUser;
     if (refreshed?.emailVerified == true) {
-      // Force idTokenChanges stream to emit the now-verified user.
       await refreshed?.getIdToken(true);
-      // Invalidate so AuthWrapper immediately re-routes to HomeScreen.
       if (mounted) ref.invalidate(authStateChangesProvider);
     } else if (mounted) {
       setState(() => _checking = false);

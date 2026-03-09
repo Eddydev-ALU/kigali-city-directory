@@ -98,7 +98,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // ── Back button + title on the same row ───────────
                       Padding(
                         padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
                         child: Row(
@@ -138,16 +137,13 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                                 ),
                               ),
                             ),
-                            // Balance the back button so title stays centred
                             const SizedBox(width: 40),
                           ],
                         ),
                       ),
 
-                      // Pushes card to the bottom
                       const Spacer(),
 
-                      // ── White card anchored to bottom ──────────────────
                       Container(
                         margin: const EdgeInsets.fromLTRB(20, 0, 20, 28),
                         decoration: BoxDecoration(
@@ -307,7 +303,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                               ),
                             ),
                             const SizedBox(height: 24),
-                            // ── Sign in link inside card ─────────────────
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [

@@ -171,7 +171,6 @@ class _AddEditListingScreenState extends ConsumerState<AddEditListingScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Place/Service Name
               TextFormField(
                 controller: _nameController,
                 textCapitalization: TextCapitalization.words,
@@ -184,7 +183,6 @@ class _AddEditListingScreenState extends ConsumerState<AddEditListingScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Category Dropdown
               DropdownButtonFormField<String>(
                 value: _selectedCategory,
                 decoration: const InputDecoration(
@@ -200,7 +198,6 @@ class _AddEditListingScreenState extends ConsumerState<AddEditListingScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Address
               TextFormField(
                 controller: _addressController,
                 decoration: const InputDecoration(
@@ -213,7 +210,6 @@ class _AddEditListingScreenState extends ConsumerState<AddEditListingScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Contact Number
               TextFormField(
                 controller: _contactController,
                 keyboardType: TextInputType.phone,
@@ -225,7 +221,6 @@ class _AddEditListingScreenState extends ConsumerState<AddEditListingScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Description
               TextFormField(
                 controller: _descriptionController,
                 maxLines: 4,
@@ -240,7 +235,6 @@ class _AddEditListingScreenState extends ConsumerState<AddEditListingScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Coordinates
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(

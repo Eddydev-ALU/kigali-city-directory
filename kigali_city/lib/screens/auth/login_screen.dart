@@ -93,7 +93,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // ── Centered title at the top ─────────────────────
                       const Padding(
                         padding: EdgeInsets.fromLTRB(24, 52, 24, 0),
                         child: Text(
@@ -107,10 +106,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                       ),
 
-                      // Pushes card to the bottom
                       const Spacer(),
 
-                      // ── White card anchored to bottom ──────────────────
                       Container(
                         margin: const EdgeInsets.fromLTRB(20, 0, 20, 28),
                         constraints: const BoxConstraints(minHeight: 540),
@@ -217,7 +214,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               ),
                             ),
                             const SizedBox(height: 24),
-                            // ── Sign up link inside card ─────────────────
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [

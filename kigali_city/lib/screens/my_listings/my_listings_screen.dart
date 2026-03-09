@@ -34,7 +34,6 @@ class _MyListingsScreenState extends ConsumerState<MyListingsScreen>
     BuildContext context,
     ListingModel listing,
   ) async {
-    // Capture before any async gap.
     final messenger = ScaffoldMessenger.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
@@ -83,170 +82,265 @@ class _MyListingsScreenState extends ConsumerState<MyListingsScreen>
     final likedListingsValue = ref.watch(likedListingsProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Listings'),
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: AppColors.accentYellow,
-          labelColor: AppColors.white,
-          unselectedLabelColor: AppColors.white.withAlpha(160),
-          tabs: const [
-            Tab(icon: Icon(Icons.list_alt_rounded), text: 'My Listings'),
-            Tab(icon: Icon(Icons.favorite_rounded), text: 'Liked'),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (_) => const AddEditListingScreen())),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text(
-          'Add Listing',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          // ── Tab 1: My Listings ────────────────────────────────────────────
-          myListingsAsync.when(
-            loading: () => const Center(
-              child: CircularProgressIndicator(color: AppColors.primaryBlue),
-            ),
-            error: (e, _) => Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+      backgroundColor: AppColors.white,
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+              child: Row(
                 children: [
-                  const Icon(
-                    Icons.error_outline_rounded,
-                    size: 48,
-                    color: Colors.red,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text(
+                          'My Listings',
+                          style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textDark,
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'Manage and track your places',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textMedium,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Error loading your listings',
-                    style: Theme.of(context).textTheme.titleMedium,
+                  GestureDetector(
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const AddEditListingScreen(),
+                      ),
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryBlue,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primaryBlue.withAlpha(60),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(
+                            Icons.add_rounded,
+                            color: AppColors.white,
+                            size: 18,
+                          ),
+                          SizedBox(width: 6),
+                          Text(
+                            'Add',
+                            style: TextStyle(
+                              color: AppColors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
-            data: (listings) {
-              if (listings.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.post_add_rounded,
-                        size: 80,
-                        color: AppColors.primaryBlue.withAlpha(100),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'No listings yet',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textDark,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Tap the button below to add your first listing',
-                        style: TextStyle(color: AppColors.textMedium),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 80),
-                    ],
-                  ),
-                );
-              }
-              return ListView.builder(
-                padding: const EdgeInsets.only(top: 8, bottom: 88),
-                itemCount: listings.length,
-                itemBuilder: (context, index) {
-                  final listing = listings[index];
-                  return ListingCard(
-                    listing: listing,
-                    showActions: true,
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => ListingDetailScreen(listing: listing),
-                      ),
-                    ),
-                    onEdit: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            AddEditListingScreen(existingListing: listing),
-                      ),
-                    ),
-                    onDelete: () => _confirmDelete(context, listing),
-                  );
-                },
-              );
-            },
-          ),
+            const SizedBox(height: 16),
 
-          // ── Tab 2: Liked Listings ─────────────────────────────────────────
-          likedListingsValue.when(
-            loading: () => const Center(
-              child: CircularProgressIndicator(color: AppColors.primaryBlue),
-            ),
-            error: (e, _) => Center(
-              child: Text(
-                'Error loading liked listings',
-                style: Theme.of(context).textTheme.titleMedium,
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 20),
+              height: 46,
+              decoration: BoxDecoration(
+                color: AppColors.lightGrey,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: TabBar(
+                controller: _tabController,
+                indicator: BoxDecoration(
+                  color: AppColors.primaryBlue,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                indicatorSize: TabBarIndicatorSize.tab,
+                dividerColor: Colors.transparent,
+                labelColor: AppColors.white,
+                unselectedLabelColor: AppColors.textMedium,
+                labelStyle: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+                tabs: const [
+                  Tab(text: 'My Listings'),
+                  Tab(text: 'Liked'),
+                ],
               ),
             ),
-            data: (likedListings) {
-              if (likedListings.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.favorite_border_rounded,
-                        size: 80,
-                        color: Colors.red.shade200,
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'No liked listings yet',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textDark,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Tap ♥ on any listing to save it here',
-                        style: TextStyle(color: AppColors.textMedium),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                );
-              }
-              return ListView.builder(
-                padding: const EdgeInsets.only(top: 8, bottom: 24),
-                itemCount: likedListings.length,
-                itemBuilder: (context, index) {
-                  final listing = likedListings[index];
-                  return ListingCard(
-                    listing: listing,
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => ListingDetailScreen(listing: listing),
+            const SizedBox(height: 8),
+
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  myListingsAsync.when(
+                    loading: () => const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primaryBlue,
                       ),
                     ),
-                  );
-                },
-              );
-            },
-          ),
-        ],
+                    error: (e, _) => Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.error_outline_rounded,
+                            size: 48,
+                            color: Colors.red,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Error loading your listings',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                        ],
+                      ),
+                    ),
+                    data: (listings) {
+                      if (listings.isEmpty) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.post_add_rounded,
+                                size: 80,
+                                color: AppColors.primaryBlue.withAlpha(100),
+                              ),
+                              const SizedBox(height: 16),
+                              const Text(
+                                'No listings yet',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.textDark,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'Tap the button below to add your first listing',
+                                style: TextStyle(color: AppColors.textMedium),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 80),
+                            ],
+                          ),
+                        );
+                      }
+                      return ListView.builder(
+                        padding: const EdgeInsets.only(top: 8, bottom: 88),
+                        itemCount: listings.length,
+                        itemBuilder: (context, index) {
+                          final listing = listings[index];
+                          return ListingCard(
+                            listing: listing,
+                            showActions: true,
+                            onTap: () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    ListingDetailScreen(listing: listing),
+                              ),
+                            ),
+                            onEdit: () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => AddEditListingScreen(
+                                  existingListing: listing,
+                                ),
+                              ),
+                            ),
+                            onDelete: () => _confirmDelete(context, listing),
+                          );
+                        },
+                      );
+                    },
+                  ),
+
+                  likedListingsValue.when(
+                    loading: () => const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primaryBlue,
+                      ),
+                    ),
+                    error: (e, _) => Center(
+                      child: Text(
+                        'Error loading liked listings',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ),
+                    data: (likedListings) {
+                      if (likedListings.isEmpty) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.favorite_border_rounded,
+                                size: 80,
+                                color: Colors.red.shade200,
+                              ),
+                              const SizedBox(height: 16),
+                              const Text(
+                                'No liked listings yet',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.textDark,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'Tap ♥ on any listing to save it here',
+                                style: TextStyle(color: AppColors.textMedium),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                      return ListView.builder(
+                        padding: const EdgeInsets.only(top: 8, bottom: 24),
+                        itemCount: likedListings.length,
+                        itemBuilder: (context, index) {
+                          final listing = likedListings[index];
+                          return ListingCard(
+                            listing: listing,
+                            onTap: () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    ListingDetailScreen(listing: listing),
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
