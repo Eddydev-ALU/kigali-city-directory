@@ -4,6 +4,14 @@ A Flutter mobile application for discovering and managing services and places in
 
 ---
 
+## Demo Video
+
+[![Kigali City Directory – Demo](https://img.youtube.com/vi/bQ3bwJDeS9k/0.jpg)](https://youtu.be/bQ3bwJDeS9k)
+
+▶ [https://youtu.be/bQ3bwJDeS9k](https://youtu.be/bQ3bwJDeS9k)
+
+---
+
 ## Features
 
 - **Firebase Authentication** – Sign up, log in, log out with email & password. Email verification enforced before app access.
